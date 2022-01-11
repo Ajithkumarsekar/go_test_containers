@@ -11,14 +11,14 @@ import (
 )
 
 type pgContainer struct {
-	container testcontainers.Container
+	container  testcontainers.Container
 	connString string
 }
 
 var singleInstanceContainer *pgContainer
 
-func getPgContainerInstance() *pgContainer{
-	if singleInstanceContainer == nil{
+func getPgContainerInstance() *pgContainer {
+	if singleInstanceContainer == nil {
 		fmt.Println("Creating a new container")
 		singleInstanceContainer = startPgContainer()
 	}
@@ -26,13 +26,13 @@ func getPgContainerInstance() *pgContainer{
 	return singleInstanceContainer
 }
 
-func startPgContainer() *pgContainer{
+func startPgContainer() *pgContainer {
 	ctx := context.Background()
 
 	dbCredentials := struct {
-		user string
+		user     string
 		password string
-		dbName string
+		dbName   string
 	}{
 		user:     "postgres",
 		password: "password",
@@ -47,7 +47,7 @@ func startPgContainer() *pgContainer{
 
 	var port = "5432/tcp"
 	dbURL := func(port nat.Port) string {
-		return  fmt.Sprintf("postgres://postgres:password@localhost:%s/%s?sslmode=disable", port.Port(), dbname)
+		return fmt.Sprintf("postgres://postgres:password@localhost:%s/%s?sslmode=disable", port.Port(), dbCredentials.dbName)
 	}
 
 	req := testcontainers.GenericContainerRequest{
@@ -56,7 +56,7 @@ func startPgContainer() *pgContainer{
 			ExposedPorts: []string{port},
 			Cmd:          []string{"postgres", "-c", "fsync=off"},
 			Env:          env,
-			WaitingFor:   wait.ForSQL(nat.Port(port), "postgres", dbURL).Timeout(time.Second*5),
+			WaitingFor:   wait.ForSQL(nat.Port(port), "postgres", dbURL).Timeout(time.Second * 5),
 		},
 		Started: true,
 	}
@@ -70,7 +70,7 @@ func startPgContainer() *pgContainer{
 		fmt.Println(err)
 	}
 
-	dbConnStr := fmt.Sprintf("postgres://postgres:password@localhost:%s/%s?sslmode=disable", mappedPort.Port(), dbname)
+	dbConnStr := fmt.Sprintf("postgres://postgres:password@localhost:%s/%s?sslmode=disable", mappedPort.Port(), dbCredentials.dbName)
 	db, err := sql.Open("postgres", dbConnStr)
 	if err != nil {
 		fmt.Println(err)
@@ -91,4 +91,3 @@ func startPgContainer() *pgContainer{
 		connString: dbConnStr,
 	}
 }
-
